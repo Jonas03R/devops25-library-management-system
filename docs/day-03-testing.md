@@ -63,7 +63,7 @@ Läs `.github/workflows/ci.yml`:
 
 1. Workflowen startar vid push till `main` eller pull request mot `main`.
 2. Jobbet `test` kör Ruff och därefter Pytest på en GitHub-hosted Ubuntu-runner.
-3. Jobbet `build-image` har `needs: test`, så Docker-imagen byggs först om testjobbet lyckas.
+3. Jobbet **Build Docker Image** har `needs: test`, så Docker-imagen byggs först om testjobbet lyckas.
 
 En push till en vanlig feature-branch startar alltså inte den här workflowen. För att se kontroller på din ändring ska pull requesten riktas mot `main` i din egen fork. Om ingen körning startar, kontrollera först aktuell katalog, `git branch --show-current`, `git remote -v`, Actions-status och PR:ens målbranch.
 
@@ -71,7 +71,7 @@ Vid rött resultat: öppna det första misslyckade steget och läs felet, rätta
 
 ## 5. Quality Gate och skyddad merge
 
-I den nuvarande pipelinen fungerar `test`-jobbet som gate för `build-image`: om lint eller tester misslyckas ska imagen inte byggas. Men en grön workflow blockerar inte automatiskt merge. Repositoryts ägare behöver konfigurera en ruleset/branch protection som kräver pull request och godkänd status check om det ska vara obligatoriskt.
+I den nuvarande pipelinen fungerar **Test and Lint** som gate för **Build Docker Image**: om lint eller tester misslyckas ska imagen inte byggas. Men en grön workflow blockerar inte automatiskt merge. Repositoryts ägare behöver konfigurera en ruleset/branch protection som kräver pull request och godkänd status check om det ska vara obligatoriskt.
 
 Dag 3-guiden ber dig studera **Settings → Rules → Rulesets** och flikarna **Commits** och **Checks**. Ändra inte repository-inställningar i övningen. En code review är dessutom en mänsklig kontroll; den ersätter inte testerna.
 

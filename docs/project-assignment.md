@@ -100,21 +100,21 @@ Kontrollera minst:
 
 Skapa gärna ett avsiktligt fel i en egen, tillfällig branch och se att ett test blir rött. Återställ felet genom att ändra koden, inte genom att radera eller skriva över arbete som du vill behålla. Förklara vad loggen visar och varför pipelinen ska stoppa vid fel.
 
-Se [Dag 3-guiden](./day-03-testing.md) för den säkra, konkreta övningen och förklaringen av testnivåer. I det här repositoryt kör CI Ruff och Pytest i `test`-jobbet; `build-image` väntar på att jobbet lyckas. Den gate:en stoppar image-build, men ruleset/branch protection behövs separat för att kräva gröna kontroller före merge.
+Se [Dag 3-guiden](./day-03-testing.md) för den säkra, konkreta övningen och förklaringen av testnivåer. I det här repositoryt kör **Test and Lint** Ruff och Pytest; **Build Docker Image** väntar på att det jobbet lyckas. Den gate:en stoppar image-build, men ruleset/branch protection behövs separat för att kräva gröna kontroller före merge.
 
 ## Steg 4: Använd GitHub som arbetsflöde
 
 Gör små commits med ett tydligt syfte:
 
 ```powershell
-git add app tests docs README.md
-git commit -m "Add library catalogue and lending"
+git add app tests docs README.md Dockerfile .github/workflows/ci.yml
+git commit -m "Build library Docker image in CI"
 git status
 ```
 
 Pusha din branch till din egen fork och öppna en pull request mot dess `main`. Kontrollera att CI-jobbet kör Ruff, tester och image-build. Läs loggarna även när jobbet misslyckas; åtgärda felet och pusha en ny commit. Slå inte ihop en ändring som har röda obligatoriska kontroller.
 
-I GitHub Actions är ett **workflow** YAML-beskrivningen, ett **job** en grupp steg, och en **runner** maskinen som kör jobbet. `uses` kör en färdig Action, `run` kör ett kommando och `needs` gör att ett jobb väntar på ett annat. I den här CI:n kör Ruff lint, Pytest tester och image-build väntar på att testjobbet lyckas. Runnern är GitHub-hosted Ubuntu; bygg inte en self-hosted runner för den här övningen.
+I GitHub Actions är ett **workflow** YAML-beskrivningen, ett **job** en grupp steg, och en **runner** maskinen som kör jobbet. `uses` kör en färdig Action, `run` kör ett kommando och `needs` gör att ett jobb väntar på ett annat. I den här CI:n kör Ruff lint, Pytest tester och Docker-builden väntar på att kontrollerna lyckas. Runnern är GitHub-hosted Ubuntu; bygg inte en self-hosted runner för den här övningen.
 
 Säkerhet är en kompletterande del av kvalitet: Dependabot kan bevaka beroenden, CodeQL kan analysera riskmönster i kod och secret scanning kan upptäcka vissa incheckade hemligheter. De här funktionerna är inte aktiverade av nuvarande workflow. Följ Dag 3-guiden och kursens instruktioner för att studera dem; lägg aldrig riktiga tokens eller lösenord i koden.
 
@@ -127,7 +127,7 @@ docker build -t library-management:local .
 docker run --rm -p 8000:8000 library-management:local
 ```
 
-I en annan terminal verifierar du `/health` och provar API:t i `/docs`. Den simulerade GitHub Actions-CD-workflowen finns under `.github/workflows/cd-simulated.yml` och körs manuellt (`workflow_dispatch`). Den bygger en image, startar den och verifierar health-endpointen. Kontrollera loggarna och stäng/ta bort den lokala containern när du är klar.
+Följ [Dag 4-guiden](./day-04-docker.md) för att verifiera `/health`, prova API:t i `/docs` och förstå skillnaden mellan Dockerfile, image och container. CI bygger en SHA-taggad image efter att testerna har godkänts, men publicerar den inte till ett registry. Den simulerade GitHub Actions-CD-workflowen finns under `.github/workflows/cd-simulated.yml` och körs manuellt (`workflow_dispatch`); den bygger en image, startar den och verifierar health-endpointen. Kontrollera loggarna och stäng/ta bort den lokala containern när du är klar.
 
 ## Steg 6: Redovisa och resonera
 

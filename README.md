@@ -55,8 +55,8 @@ Den första implementationen lagrar data i minnet. Böcker och lån återställs
 ## Docker
 
 ```bash
-docker build -t devops25-cicd-demo:local .
-docker run --rm -p 8000:8000 devops25-cicd-demo:local
+docker build -t library-management:local .
+docker run --rm -p 8000:8000 library-management:local
 ```
 
 ## Pedagogisk användning
@@ -66,7 +66,7 @@ Repositoryt är byggt för att kunna användas stegvis:
 1. **Dag 1:** förstå applikationen och varför versionshantering behövs
 2. **Dag 2:** skapa första CI-pipelinen
 3. **Dag 3:** [testning, kodkvalitet och quality gates](docs/day-03-testing.md)
-4. **Dag 4:** bygga artifact/container image
+4. **Dag 4:** [bygga och verifiera Docker-image](docs/day-04-docker.md)
 5. **Dag 5:** deploya till testmiljö
 6. **Dag 6:** felsöka, verifiera och resonera om rollback
 7. **Projekt:** bygga och motivera en egen CI/CD-kedja för bibliotekssystemet
