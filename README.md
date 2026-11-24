@@ -17,6 +17,7 @@ Commit → Build → Test → Artifact/Image → Deploy → Verify → Rollback
 - Unit tests och integrationstester
 - Dockerfile och docker-compose
 - GitHub Actions för CI och en simulerad CD-kedja
+- Sparad JUnit-testrapport från CI
 - Scripts för lokal körning, verifiering, deployment och rollback
 - Studentuppgifter för vecka 1–4
 - Projektuppgift och bedömningsstöd
@@ -67,7 +68,7 @@ Repositoryt är byggt för att kunna användas stegvis:
 2. **Dag 2:** skapa första CI-pipelinen
 3. **Dag 3:** [testning, kodkvalitet och quality gates](docs/day-03-testing.md)
 4. **Dag 4:** [bygga och verifiera Docker-image](docs/day-04-docker.md)
-5. **Dag 5:** deploya till testmiljö
+5. **Dag 5:** [simulerad deployment, verifiering och artifacts](docs/day-05-delivery.md)
 6. **Dag 6:** felsöka, verifiera och resonera om rollback
 7. **Projekt:** bygga och motivera en egen CI/CD-kedja för bibliotekssystemet
 

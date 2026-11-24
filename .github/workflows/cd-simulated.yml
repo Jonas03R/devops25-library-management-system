@@ -1,18 +1,38 @@
-name: CD simulated
+name: CD - Simulated Deployment
 
 on:
+  push:
+    branches: [ feature/day5-delivery ]
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  deploy-to-test:
+  deploy:
+    name: Build, run and verify
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Build image
-        run: docker build -t devops25-cicd-demo:test .
-      - name: Start container
-        run: docker run -d --name app -p 8000:8000 devops25-cicd-demo:test
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Build Docker image
+        run: docker build -t library-management:${{ github.sha }} .
+
+      - name: Start application
+        id: start
+        run: docker run -d --name library-management-test -p 8000:8000 library-management:${{ github.sha }}
+
       - name: Verify deployment
         run: bash scripts/verify.sh http://127.0.0.1:8000/health
-      - name: Explain why
-        run: echo "Deployment should only continue when verification creates enough confidence."
+
+      - name: Show application logs on failure
+        if: failure() && steps.start.outcome == 'success'
+        run: docker logs library-management-test
+
+      - name: Stop application
+        if: always()
+        run: |
+          if docker container inspect library-management-test >/dev/null 2>&1; then
+            docker rm --force library-management-test
+          fi

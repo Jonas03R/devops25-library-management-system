@@ -107,8 +107,8 @@ Se [Dag 3-guiden](./day-03-testing.md) för den säkra, konkreta övningen och f
 Gör små commits med ett tydligt syfte:
 
 ```powershell
-git add app tests docs README.md Dockerfile .github/workflows/ci.yml
-git commit -m "Build library Docker image in CI"
+git add app tests docs README.md Dockerfile .github/workflows scripts
+git commit -m "Add library CI/CD workflow"
 git status
 ```
 
@@ -127,7 +127,7 @@ docker build -t library-management:local .
 docker run --rm -p 8000:8000 library-management:local
 ```
 
-Följ [Dag 4-guiden](./day-04-docker.md) för att verifiera `/health`, prova API:t i `/docs` och förstå skillnaden mellan Dockerfile, image och container. CI bygger en SHA-taggad image efter att testerna har godkänts, men publicerar den inte till ett registry. Den simulerade GitHub Actions-CD-workflowen finns under `.github/workflows/cd-simulated.yml` och körs manuellt (`workflow_dispatch`); den bygger en image, startar den och verifierar health-endpointen. Kontrollera loggarna och stäng/ta bort den lokala containern när du är klar.
+Följ [Dag 4-guiden](./day-04-docker.md) för att verifiera `/health`, prova API:t i `/docs` och förstå skillnaden mellan Dockerfile, image och container. Följ sedan [Dag 5-guiden](./day-05-delivery.md) för simulerad deployment, test-artifact och verifiering. CI bygger en SHA-taggad image efter godkända tester och sparar en JUnit-rapport, men publicerar inte imagen till ett registry. CD-workflowen startar en tillfällig container och verifierar `/health` samt bokkatalogens API; den är inte produktionsdrift. Kontrollera loggarna och stäng/ta bort den lokala containern när du är klar.
 
 ## Steg 6: Redovisa och resonera
 
@@ -136,7 +136,7 @@ Visa:
 1. applikationens API och en lyckad utlåning/återlämning
 2. ett automatiserat test som fångar en regelöverträdelse
 3. en GitHub Actions-körning från commit eller pull request
-4. image-build och verifiering av testdeployment
+4. image-build, testrapport-artifact och verifiering av simulerad deployment
 5. ett fel i pipelinen, loggen och hur det åtgärdades
 6. hur du skulle förbättra systemet med beständig databas, autentisering, övervakning och rollback i en riktig miljö
 
