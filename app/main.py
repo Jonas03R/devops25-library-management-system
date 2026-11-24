@@ -35,6 +35,11 @@ def health():
     return {"status": "ok"}
 
 
+@app.get("/version")
+def api_version():
+    return {"version": "1.1", "environment": "demo"}
+
+
 @app.get("/api/add")
 def api_add(a: int, b: int):
     return {"result": add(a, b)}

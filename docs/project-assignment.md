@@ -127,7 +127,7 @@ docker build -t library-management:local .
 docker run --rm -p 8000:8000 library-management:local
 ```
 
-Följ [Dag 4-guiden](./day-04-docker.md) för att verifiera `/health`, prova API:t i `/docs` och förstå skillnaden mellan Dockerfile, image och container. Följ sedan [Dag 5-guiden](./day-05-delivery.md) för simulerad deployment, test-artifact och verifiering. CI bygger en SHA-taggad image efter godkända tester och sparar en JUnit-rapport, men publicerar inte imagen till ett registry. CD-workflowen startar en tillfällig container och verifierar `/health` samt bokkatalogens API; den är inte produktionsdrift. Kontrollera loggarna och stäng/ta bort den lokala containern när du är klar.
+Följ [Dag 4-guiden](./day-04-docker.md) för att verifiera `/health`, prova API:t i `/docs` och förstå skillnaden mellan Dockerfile, image och container. Följ [Dag 5-guiden](./day-05-delivery.md) för simulerad deployment och test-artifact och [Dag 6-guiden](./day-06-operations.md) för felsökning, versionskontroll, rollback och lokal Kubernetes-orientering. CI sparar en JUnit-rapport men publicerar inte imagen till ett registry. CD-workflowen startar en tillfällig container och verifierar hälsa, katalog och applikationsversion; den är inte produktionsdrift.
 
 ## Steg 6: Redovisa och resonera
 
@@ -138,9 +138,12 @@ Visa:
 3. en GitHub Actions-körning från commit eller pull request
 4. image-build, testrapport-artifact och verifiering av simulerad deployment
 5. ett fel i pipelinen, loggen och hur det åtgärdades
-6. hur du skulle förbättra systemet med beständig databas, autentisering, övervakning och rollback i en riktig miljö
+6. rollback-strategin och begränsningarna för beständig data
+7. hur du skulle förbättra systemet med databas, autentisering, övervakning och säker deployment i en riktig miljö
 
 För varje steg ska du kunna förklara: **Vilket problem löser det? Vilken risk minskar det? Vad händer om steget saknas eller misslyckas?**
+
+Kubernetes-manifesten är en orienteringsövning, inte ett krav på att använda Kubernetes för ett så litet projekt. Använd bara ett lokalt testkluster och kontrollera aktiv `kubectl`-context innan du kör kommandon.
 
 ## Kort ordlista
 

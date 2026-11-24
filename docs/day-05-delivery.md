@@ -19,15 +19,15 @@ Arbeta i branchen `feature/day5-delivery`. Om du redan är på den branchen fort
 
 ## 2. Följ CI-kontrollerna och testrapporten
 
-I `.github/workflows/ci.yml` kör **Test and Lint** Ruff och Pytest. Pytest skriver `test-results.xml` i JUnit-format; `actions/upload-artifact` försöker spara filen även om tester misslyckas. Efter godkända kontroller bygger **Build Docker Image** en image taggad med commitens SHA.
+I `.github/workflows/ci.yml` kör **Test and Lint** Pytest och Ruff. Pytest skriver `reports/pytest.xml` i JUnit-format; `actions/upload-artifact` försöker spara filen även om tester misslyckas. Efter godkända tester och lint bygger **Build Docker Image** en SHA-taggad image, startar den och verifierar API:t.
 
-Efter en pull request mot `main`, öppna GitHub → **Actions** → den aktuella CI-körningen → **Summary**. Under **Artifacts** ska du kunna ladda ner `test-results` och öppna `test-results.xml`. Workflow-körningen är resultat/loggar; XML-filen är en sparad artifact. CI-imagen byggs på en tillfällig runner och publiceras inte till ett registry.
+Efter en pull request mot `main`, öppna GitHub → **Actions** → den aktuella CI-körningen → **Summary**. Under **Artifacts** ska du kunna ladda ner `pytest-results` och öppna `reports/pytest.xml`. Workflow-körningen är resultat/loggar; XML-filen är en sparad artifact. CI-imagen byggs på en tillfällig runner och publiceras inte till ett registry.
 
 ## 3. Simulerad deployment i GitHub Actions
 
-I `.github/workflows/cd-simulated.yml` startas CD-workflowen av push till `feature/day5-delivery` (eller manuellt när GitHub erbjuder **Run workflow**). Den checkar ut koden, bygger `library-management:<commit-SHA>`, startar containern, verifierar hälsa och bokkatalogens API, visar containerloggar vid verifieringsfel och stoppar containern även om verifieringen misslyckas.
+I `.github/workflows/cd-simulated.yml` startas CD-workflowen av push till `feature/day5-delivery` eller `feature/day6-operations` (eller manuellt när GitHub erbjuder **Run workflow**). Den checkar ut koden, bygger `library-management:<commit-SHA>`, startar containern, verifierar hälsa och bokkatalogens API, kontrollerar applikationsversionen, visar containerloggar vid verifieringsfel och stoppar containern även om verifieringen misslyckas.
 
-Efter push, öppna GitHub → **Actions** → **CD - Simulated Deployment** → körningen → jobbet **Build, run and verify**. Läs stegen **Build Docker image**, **Start application**, **Verify deployment** och **Stop application**. En grön körning betyder att just dessa kontroller passerade på runnern; den betyder inte att applikationen publicerats eller körs efter att jobbet avslutats.
+Efter push, öppna GitHub → **Actions** → **CD - Simulated Deployment** → körningen → jobbet **Build, run and verify**. Läs stegen **Build Docker image**, **Start application**, **Verify deployment**, **Verify deployed version** och **Stop application**. En grön körning betyder att just dessa kontroller passerade på runnern; den betyder inte att applikationen publicerats eller körs efter att jobbet avslutats.
 
 CI och CD har separata triggers. I den här undervisningssimuleringen kan CD starta på branch-push oberoende av att CI-kontrollerna är gröna. Därför är CD inte en release-gate för produktion; i en riktig leveranskedja måste deployment villkoras av godkända kontroller och skyddad miljö. Vi publicerar inte imagen till GHCR/Docker Hub och använder inga deployment-hemligheter här. Eftersom CI- och CD-jobben bygger var för sig på tillfälliga runners får vi inte bevis på att exakt samma image-binära innehåll har flyttats mellan miljöer. För det behöver man publicera och sedan distribuera samma image, helst identifierad med digest.
 

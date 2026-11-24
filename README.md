@@ -69,7 +69,7 @@ Repositoryt är byggt för att kunna användas stegvis:
 3. **Dag 3:** [testning, kodkvalitet och quality gates](docs/day-03-testing.md)
 4. **Dag 4:** [bygga och verifiera Docker-image](docs/day-04-docker.md)
 5. **Dag 5:** [simulerad deployment, verifiering och artifacts](docs/day-05-delivery.md)
-6. **Dag 6:** felsöka, verifiera och resonera om rollback
+6. **Dag 6:** [felsöka, verifiera och öva rollback/Kubernetes](docs/day-06-operations.md)
 7. **Projekt:** bygga och motivera en egen CI/CD-kedja för bibliotekssystemet
 
 ## Viktig fråga i varje steg
@@ -91,4 +91,4 @@ Jag har genomfört följande moment:
 
 ## Testresultat
 
-Vid Dag 1-baseline passerade 5 tester. Den utökade LMS-testsviten kör nu 11 tester; kör `pytest` för aktuell status.
+Vid Dag 1-baseline passerade 5 tester. LMS-testsviten har utökats vidare; kör `python -m pytest -v` för aktuellt testresultat.

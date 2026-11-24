@@ -2,7 +2,7 @@ name: CD - Simulated Deployment
 
 on:
   push:
-    branches: [ feature/day5-delivery ]
+    branches: [ feature/day5-delivery, feature/day6-operations ]
   workflow_dispatch:
 
 permissions:
@@ -25,6 +25,15 @@ jobs:
 
       - name: Verify deployment
         run: bash scripts/verify.sh http://127.0.0.1:8000/health
+
+      - name: Verify deployed version
+        run: |
+          set -o pipefail
+          curl --fail --silent --show-error http://127.0.0.1:8000/version
+          echo
+          curl --fail --silent --show-error http://127.0.0.1:8000/version \
+            | python3 -c 'import json,sys; data=json.load(sys.stdin); assert data["version"] == "1.1", "Unexpected version"'
+          echo "Correct application version deployed"
 
       - name: Show application logs on failure
         if: failure() && steps.start.outcome == 'success'

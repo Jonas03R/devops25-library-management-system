@@ -1,19 +1,34 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: devops25-cicd-demo
+  name: library-management
 spec:
   replicas: 1
+  revisionHistoryLimit: 5
   selector:
     matchLabels:
-      app: devops25-cicd-demo
+      app: library-management
   template:
     metadata:
       labels:
-        app: devops25-cicd-demo
+        app: library-management
     spec:
       containers:
-        - name: app
-          image: devops25-cicd-demo:local
+        - name: library-management
+          image: library-management:local
+          imagePullPolicy: Never
           ports:
-            - containerPort: 8000
+            - name: http
+              containerPort: 8000
+          readinessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 2
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: http
+            initialDelaySeconds: 10
+            periodSeconds: 10

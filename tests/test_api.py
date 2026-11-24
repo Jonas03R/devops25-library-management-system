@@ -18,6 +18,12 @@ def test_health():
     assert response.json() == {"status": "ok"}
 
 
+def test_version():
+    response = client.get("/version")
+    assert response.status_code == 200
+    assert response.json() == {"version": "1.1", "environment": "demo"}
+
+
 def test_add_endpoint():
     response = client.get("/api/add?a=2&b=3")
     assert response.status_code == 200

@@ -2,7 +2,7 @@ name: CI
 
 on:
   push:
-    branches: [ main ]
+    branches: [ main, 'feature/**' ]
   pull_request:
     branches: [ main ]
 
@@ -18,26 +18,28 @@ jobs:
         uses: actions/checkout@v6
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Lint
-        run: ruff check app tests
-
       - name: Test
-        run: pytest --junitxml=test-results.xml
+        run: |
+          mkdir -p reports
+          python -m pytest -v --junitxml=reports/pytest.xml
 
       - name: Upload test report
-        if: always() && hashFiles('test-results.xml') != ''
+        if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: test-results
-          path: test-results.xml
-          if-no-files-found: error
+          name: pytest-results
+          path: reports/pytest.xml
+          if-no-files-found: warn
+
+      - name: Lint
+        run: python -m ruff check app tests
 
   docker-build:
     name: Build Docker Image
@@ -47,3 +49,30 @@ jobs:
       - uses: actions/checkout@v6
       - name: Build Docker image
         run: docker build -t library-management:${{ github.sha }} .
+
+      - name: Start Docker container
+        id: start
+        run: docker run -d --name library-management-ci -p 8000:8000 library-management:${{ github.sha }}
+
+      - name: Verify application
+        run: bash scripts/verify.sh http://127.0.0.1:8000/health
+
+      - name: Verify deployed version
+        run: |
+          set -o pipefail
+          curl --fail --silent --show-error http://127.0.0.1:8000/version
+          echo
+          curl --fail --silent --show-error http://127.0.0.1:8000/version \
+            | python3 -c 'import json,sys; data=json.load(sys.stdin); assert data["version"] == "1.1", "Unexpected version"'
+          echo "Correct application version deployed"
+
+      - name: Show application logs on failure
+        if: failure() && steps.start.outcome == 'success'
+        run: docker logs library-management-ci
+
+      - name: Stop Docker container
+        if: always()
+        run: |
+          if docker container inspect library-management-ci >/dev/null 2>&1; then
+            docker rm --force library-management-ci
+          fi
