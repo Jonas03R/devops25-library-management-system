@@ -2,16 +2,13 @@
 
 ## Projektöversikt
 
-Projektet är ett enkelt digitalt bibliotekssystem och en övning i Continuous Integration och Continuous Delivery (CI/CD). Applikationen byggs vidare på kursens demonstrationsrepository och använder Python, FastAPI, pytest, Ruff, Docker och GitHub Actions.
+I detta projekt ska jag skapa ett enkelt digitalt bibliotekssystem och som ska utföras av Continuous Integration och Continuous Delivery (CI/CD). Applikationen ska byggas vidare på kursens demonstrationsrepository och därmed ska man använda Python, FastAPI, pytest, Ruff, Docker och GitHub Actions för att utföra projektet.
 
 Arbetsflödet som projektet demonstrerar är:
 
-```text
-Ändring → Git-commit → CI → tester och lint → Docker-image
-       → simulerad deployment → verifiering → rollback-övning
-```
+![Arbetsflöde](Bilder/DevOps.png)
 
-Målet är inte bara att få applikationen att fungera, utan också att kunna förklara vad varje kontroll gör, vilken risk den minskar och vad som händer om ett steg misslyckas.
+Målet är att få en applikationen att fungera, och även kunna förklara vad varje kontroll gör, vilken risk den minskar och vad som händer om ett steg misslyckas.
 
 ## Syfte och funktioner
 
@@ -71,7 +68,7 @@ Swagger-dokumentationen finns på `/docs` när applikationen körs lokalt.
 
 ## Hur projektet byggdes
 
-Projektet utvecklades från kursens befintliga FastAPI-demo. De enkla räkne-endpointsen behölls som demoexempel, medan biblioteksfunktionerna lades till separat. Arbetet delades upp så att affärsregler, HTTP-gränssnitt, tester och leveransflöde går att förstå och kontrollera var för sig.
+Projektet utgår från kursens befintliga FastAPI-demo. Där de enkla räkne-endpointsen behölls för demoexempel, medan biblioteksfunktionerna lades till separat. Arbetet är uppdelat så att affärsregler, HTTP-gränssnitt, tester och leveransflöde går att förstå och som kontrollera var för sig.
 
 ### 1. Bibliotekets modeller och affärsregler
 
@@ -87,7 +84,7 @@ Denna lagringslösning är medvetet enkel. Inget skrivs till en databas eller fi
 
 ### 2. FastAPI-gränssnitt och validering
 
-`app/main.py` exponerar biblioteksfunktionerna som HTTP-endpoints. Pydantic-modellerna `BookCreate`, `UserCreate` och `BorrowRequest` beskriver indata. Titel, författare, namn och e-post måste ha minst ett tecken; bok- och användar-ID:n i ett låneanrop måste vara större än noll.
+`app/main.py` visar biblioteksfunktionerna som HTTP-endpoints. Pydantic-modellerna `BookCreate`, `UserCreate` och `BorrowRequest` beskriver indata. Titel, författare, namn och e-post måste ha minst ett tecken; bok- och användar-ID:n i ett låneanrop måste vara större än noll.
 
 Routes anropar `LibraryService` i stället för att innehålla hela affärslogiken själva. Nya böcker, användare och lån returnerar statuskod `201`. En gemensam exception handler översätter bibliotekets fel till JSON-svar:
 
@@ -96,7 +93,7 @@ Routes anropar `LibraryService` i stället för att innehålla hela affärslogik
 
 FastAPI skapar dessutom Swagger-gränssnittet på `/docs`, där API:t kan provas manuellt.
 
-### 3. Dataflöde genom applikationen
+### 3. Dataflödet hos applikationen
 
 Ett typiskt anrop går genom följande steg:
 
@@ -108,45 +105,45 @@ HTTP-anrop
   → resultat eller LibraryError blir ett JSON-svar med HTTP-statuskod
 ```
 
-Detta gör att samma utlånings- och återlämningsregler kan testas direkt i tjänsten och genom API:t. Hälsokontrollen `/health` visar att applikationen svarar. `/version` returnerar applikationsversionen `1.1` och miljön `demo`, så en körande container kan verifieras både för tillgänglighet och version.
+Vilket gör att samma utlånings- och återlämningsregler kan testas direkt i tjänsten och som görs genom API:t. Hälsokontrollen `/health` visar att applikationen svarar. `/version` returnerar applikationsversionen `1.1` och miljön `demo`, så en körande container kan verifieras både för tillgänglighet och version.
 
 ### 4. Tester och isolering
 
-`tests/test_service.py` testar reglerna direkt mot `LibraryService`, till exempel sökning, saknade poster, dubbel utlåning och återlämning. `tests/test_api.py` använder FastAPI `TestClient` för att anropa API-routes i testmiljön och kontrollera statuskoder och JSON-svar.
+`tests/test_service.py` testar reglerna direkt mot `LibraryService`, exempel sökning, saknade poster, dubbel utlåning och återlämning. `tests/test_api.py` använder FastAPI `TestClient` för att anropa API-routes hos testmiljön och kontrollera att statuskoder och JSON-svar.
 
-API-testernas automatiska fixture ersätter bibliotekstjänsten med en ny instans före varje test. På så sätt påverkar inte böcker och lån från ett test resultatet i nästa. Tester täcker även health/version, katalogsökning och de bevarade räkne-endpointsen.
+API-testernas automatiska ersätter bibliotekstjänsten med en ny instans före varje gång man gör test. På samma sätt påverkar inte böcker och lån från ett test resultatet i nästa. Tester täcker även health/version, katalogsökning och de bevarade räkne-endpointsen.
 
 ### 5. CI, container och simulerad leverans
 
-CI i `.github/workflows/ci.yml` installerar Python 3.12 och projektets beroenden på en GitHub-hosted Ubuntu-runner. Pytest skriver en JUnit-rapport; rapporten laddas upp som `pytest-results`, även när tidigare steg misslyckats (om filen finns). Ruff körs därefter. Docker-jobbet har `needs: test` och startar därför inte förrän testjobbet lyckats.
+CI i `.github/workflows/ci.yml` installerar Python 3.12 och projektets beroenden på GitHub-hosted Ubuntu-runner. Pytest skriver en JUnit-rapport; rapporten laddas upp som `pytest-results`, även när den tidigare steget misslyckas (om filen finns). Därefer körs Ruff. Docker har `needs: test` och startar därför inte förräns testet har lyckats.
 
-Dockerfile bygger på `python:3.12-slim`, installerar beroenden och startar Uvicorn på port 8000. CI bygger en SHA-taggad image, startar den, verifierar hälsa och bokkatalog samt kontrollerar att `/version` svarar med `1.1`. Vid verifieringsfel samlas containerloggar in; containern tas bort i ett avslutande steg.
+Dockerfile bygger på `python:3.12-slim`, installerar beroenden och startar Uvicorn på port 8000. CI bygger på en SHA-taggad image, som startar den, som därmed verifierar hälsa och bokkatalog samt kontrollerar att `/version` svarar med `1.1`. Hos verifieringsfel samlas containerloggar in, därefter tas det bort containern i ett avslutande steg.
 
-`cd-simulated.yml` demonstrerar en separat, tillfällig deployment på en GitHub-runner. Den bygger och verifierar en container men publicerar inte imagen till ett registry och lämnar inte applikationen körande efter jobbet. Eftersom CI och CD har separata triggers väntar CD inte automatiskt på en grön CI-körning.
+`cd-simulated.yml` demonstrerar separat och tillfällig deployment på en GitHub-runner. Den bygger och verifierar vidare en container men publicerar inte imagen förräns ett registry och lämnar inte applikationen körande efter arbetet. Eftersom CI och CD har separata triggers väntar CD inte automatiskt på en grön CI-körning.
 
 ### 6. Lokal drift och rollback
 
 För lokal drift bygger `scripts/deploy_local.sh` imagen `library-management:local` och startar containern `library-management-demo`. Om en container med detta övningsnamn redan finns, sparar skriptet dess image under taggen `library-management:previous` innan containern ersätts.
 
-`scripts/verify.sh` väntar på att health-endpointen ska svara och kontrollerar sedan att bokkatalogen returnerar en JSON-lista. `scripts/rollback_local.sh` kontrollerar att rollback-imagen finns, startar den och verifierar hälsa/katalog samt en valfri förväntad appversion.
+`scripts/verify.sh` väntar på att health-endpointen som svara och kontrollerar sedan att bokkatalogen returnerar en JSON-lista. `scripts/rollback_local.sh` kontrollerar att rollback-imagen finns, startar den och verifierar hälsa/katalog samt en valfri förväntad appversion.
 
-Rollback fungerar bara om det finns en tidigare fungerande image att återgå till. En image-rollback återställer inte beständig data; nuvarande applikation lagrar data i minnet. Kubernetes-manifesten är en separat, valfri orienteringsövning och är inte en produktionsdeployment.
+Rollback fungerar bara om det finns en tidigare fungerande image att utgå från. En image-rollback återställer inte konstant data, nuvarande applikation lagrar data i minnet. Kubernetes-manifesten är en separat, valfri orienteringsövning och är inte en produktionsdeployment.
 
 ## **Projektets arbetsplan**
 
 ### 1. Planera projektet – syfte, funktioner och krav
 
-**Genomfört:** Projektidén avgränsades till ett litet bibliotekssystem med böcker, användare, utlåning och återlämning. Kraven omfattar även sökning, tillgänglighetsstatus och automatiska kontroller av felaktiga lån.
+**Genomförd**: Projektidén avgränsades för ett litet bibliotekssystem med böcker, användare, utlåning och återlämning. Kraven omfattar även sökning, tillgänglighetsstatus och automatiska kontroller av felaktiga lån.
 
-**Tekniskt val:** Första versionen har ett litet REST-API. Inloggning, betalningar, förseningsavgifter och produktionsdatabas ingår inte i omfattningen.
+**Tekniskt val**: Första versionen har ett litet REST-API. Inloggning, betalningar, förseningsavgifter och produktionsdatabas ingår inte i omfattningen.
 
-**Begränsning:** Data lagras i minnet och återställs när processen startas om. Det är en medveten förenkling för CI/CD-övningen, inte en lösning för ett verkligt bibliotek.
+**Begränsning**: Data lagras i minnet och återställs när processen startas om. Det är en medveten förenkling för CI/CD-övningen, inte en lösning för ett verkligt bibliotek.
 
-### 2. Förbereda utvecklingsmiljön – Python, Git och projektstruktur
+### 2. Förbereda utvecklingsmiljön
 
-**Genomfört:** Projektet använder Python och en virtuell miljö (`.venv`). Beroenden är definierade i `requirements.txt`. Git används för att följa kodändringar och GitHub för att lagra repositoryt och köra Actions.
+**Genomförd:** Detta Projekt kommer att använda Python och en virtuell miljö (`.venv`). Definierade Beroenden är i `requirements.txt`. Git används för att följa kodändringar och att GitHub lagrar repositoryt och köra Actions.
 
-Skapa och aktivera en virtuell miljö i Windows PowerShell:
+Skapa och aktivera en virtuell miljö i Windows PowerShell genom att skriva in ett kommando i taget:
 
 ```powershell
 python -m venv .venv
@@ -154,7 +151,7 @@ python -m venv .venv
 pip install -r requirements.txt
 ```
 
-Kontrollera sedan att rätt branch och ändringar används:
+Kontrollera därefter att man får rätt branch och ändringar används. Kär dessa kommandon en i taget:
 
 ```powershell
 git status
@@ -164,9 +161,9 @@ git remote -v
 
 **Teknik:** FastAPI och Uvicorn kör API:t, pytest kör automatiska tester och Ruff kontrollerar kodstil.
 
-### 3. Bygga bibliotekssystemet – böcker, användare och utlåning
+### 3. Bygga bibliotekssystemet
 
-**Genomfört:** API:t kan skapa och lista böcker och användare, söka i katalogen, visa tillgängliga böcker, låna och återlämna böcker. Biblioteksregler och datahantering finns i `app/library.py`; HTTP-gränssnittet finns i `app/main.py`.
+**Genomförd:** API:t kan skapa och lista böcker och användare, söka i katalogen, visa tillgängliga böcker, låna och återlämna böcker. Biblioteksregler och datahantering finns i `app/library.py`; HTTP-gränssnittet finns i `app/main.py`.
 
 **Felhantering:** Applikationen returnerar tydliga HTTP-felkoder för poster som saknas och för böcker eller lån i ett ogiltigt tillstånd.
 
@@ -174,7 +171,7 @@ git remote -v
 
 ### 4. Skriva automatiska tester – kontrollera att funktionerna fungerar
 
-**Genomfört:** Pytest-tester täcker bland annat:
+**Genomförd:** Pytest-tester täcker bland annat:
 
 - hälsokontroll och versionsendpoint
 - sökning efter bok
@@ -193,11 +190,13 @@ python -m ruff check app tests
 
 Vid den senaste lokala kontrollen passerade **12 tester** och Ruff-kontrollen. Pytest visade även ett deprecation-varningsmeddelande från en beroendekedja (Starlette/AnyIO); varningen hindrade inte testen från att passera.
 
-### 5. Versionshantera med Git och GitHub – branches, commits och Pull Requests
+bild
 
-**Genomfört:** Projektet versionshanteras med Git. Feature branches används för arbete med en ändring i taget. Ändringar kan pushas till GitHub och föreslås för `main` genom en Pull Request (PR).
+### 5. Versionshantera med Git och GitHub
 
-Exempel på arbetsflöde:
+**Genomförd:** Projektet versionshanteras med Git. Feature branches används för arbete med en ändring i taget. Ändringar kan pushas till GitHub och föreslås för `main` genom en Pull Request (PR).
+
+Arbetsflöde med att köra ett kommandon i taget:
 
 ```powershell
 git switch -c feature/min-andring
@@ -206,20 +205,20 @@ git commit -m "Beskriv ändringen kort"
 git push -u origin feature/min-andring
 ```
 
-Öppna därefter en PR med `main` som **base** och feature-branchen som **compare**. Granska ändringarna och resultatet från CI innan eventuell merge. En PR är ett förslag om att föra in ändringar; den mergar inte automatiskt sig själv.
+Därefter öppna en PR med `main` som **base** och feature-branchen som **compare**. Granska ändringarna och resultatet från CI innan eventuell merge. PR:et är ett förslag som för in ändring, vilket gör att den inte mergar automatiskt av sig själv.
 
-**Viktigt:** Kontrollera alltid att `origin` pekar på ditt eget GitHub-repository innan du pushar.
+**Viktigt:** Det är viktigt att alltid kontrollera `origin` som pekar på mitt egna GitHub-repository innan jag pushar in.
 
 ### 6. Skapa CI-pipeline – automatisera bygg- och testkontroller
 
-**Genomfört:** `.github/workflows/ci.yml` körs vid push till `main` och `feature/**`, samt vid pull request mot `main`. Den använder en GitHub-hosted Ubuntu-runner och utför följande:
+**Genomförd:** `.github/workflows/ci.yml` körs vid push till `main` och `feature/**`, samt vid pull request mot `main`. Den använder en GitHub-hosted Ubuntu-runner och utför följande:
 
-1. checkar ut koden och installerar Python 3.12
+1. checkar koden och installerar Python 3.12
 2. installerar beroenden från `requirements.txt`
 3. kör pytest och skriver en JUnit-rapport till `reports/pytest.xml`
 4. laddar upp rapporten som artifact med namnet `pytest-results`
 5. kör Ruff
-6. efter godkänt test-/lint-jobb bygger och startar en Docker-container
+6. efter ett godkänt test-/lint-jobb bygger och startar en Docker-container
 7. verifierar `/health`, bokkatalogen och `/version`
 8. visar containerloggar vid fel och städar containern efteråt
 
@@ -229,7 +228,7 @@ git push -u origin feature/min-andring
 
 ### 7. Paketering och leverans – förbereda applikationen för leverans
 
-**Genomfört:** Projektet innehåller en `Dockerfile` och `docker-compose.yml`. Docker-image kan byggas med en commitbaserad tagg i CI eller med taggen `library-management:local` lokalt.
+**Genomförd:** Projektet innehåller en `Dockerfile` och `docker-compose.yml`. Docker-image kan byggas med en commitbaserad tagg i CI eller med taggen `library-management:local` lokalt.
 
 Exempel:
 
@@ -254,13 +253,13 @@ bash scripts/verify.sh
 
 GitHub-workflowen `cd-simulated.yml` kör också en separat deployment på en tillfällig GitHub-runner. Den verifierar applikationen och städar containern när jobbet avslutas.
 
-**Avgränsning:** Det är en simulerad deployment; applikationen körs inte permanent och blir inte publicerad för externa användare. CD och CI har separata triggers, så CD är inte automatiskt en release-gate som väntar på grön CI.
+**Avgränsning:** Simulerad deployment; applikationen körs inte permanent och blir inte publicerad för externa användare. CD och CI har separata triggers, så CD är inte automatiskt en release-gate som väntar på grön CI.
 
 Kubernetes-manifest finns i `k8s/` som en valfri lokal övning. De har inte verifierats mot ett lokalt kluster i denna utvecklingsmiljö. Kontrollera alltid aktiv `kubectl`-context och använd endast ett lokalt övningskluster.
 
-### 9. Felhantering och rollback – visa hur problem upptäcks och hanteras
+### 9. Felhantering och rollback
 
-**Genomfört:** Workflowen kan visa containerloggar om verifieringen misslyckas och städar containern även vid fel. Dag 6-avsnittet i README beskriver felsökning från första röda steget: kontrollera commit och trigger, läs loggen, formulera en hypotes, återskapa felet och verifiera rättningen.
+**Genomförd:** Workflowen kan visa containerloggar om verifieringen misslyckas och städar containern även vid fel. Dag 6-avsnittet i README beskriver felsökning från första röda steget: kontrollera commit och trigger, läs loggen, formulera en hypotes, återskapa felet och verifiera rättningen.
 
 `scripts/deploy_local.sh` sparar den befintliga containerns image som `library-management:previous` innan den ersätter containern. `scripts/rollback_local.sh` kan starta den sparade imagen och verifiera hälsa, katalog samt valfri förväntad appversion:
 
@@ -270,15 +269,15 @@ bash scripts/rollback_local.sh library-management:previous 1.1
 
 **Viktig begränsning:** Första deploymenten har ingen tidigare image att återställa. Rollback av en image återställer inte beständig data. I nuläget lagras dessutom applikationsdata endast i minnet. En rollback fungerar bara som verklig kodåterställning om den sparade imagen kommer från en tidigare fungerande version.
 
-### 10. Dokumentation och demonstration – redovisa lösningen och dina tekniska val
+### 10. Dokumentation och demonstration
 
 Denna fil sammanfattar projektets mål, genomförda funktioner och CI/CD-kedja. Övriga guider finns i `docs/`:
 
-- Slutprojektets steg-för-steg-guide finns under Dag 6 i [README.md](README.md)
+- Slutprojektets steg-för-steg-guide finns under [README.md](README.md)
 - [Dag 2 – CI](docs/day-02-ci.md)
-- Dag 3–6 sammanfattas i [README.md](README.md)
+- Dag 1–6 sammanfattas i [README.md](README.md)
 
-För en demonstration kan du visa:
+Demonstration kan visar:
 
 1. hur en bok och användare registreras och hur en bok lånas och återlämnas
 2. ett automatiskt test som kontrollerar en biblioteksregel
