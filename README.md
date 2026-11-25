@@ -70,6 +70,28 @@ Repositoryt följer kursens steg från första commit till verifierad leverans:
 - **Dag 3–6:** testning, Docker, simulerad leverans och drift – sammanfattas i avsnitten nedan
 - **Projekt:** bygga och motivera en egen CI/CD-kedja för bibliotekssystemet
 
+## Viktig fråga i varje steg
+
+> Vilket problem löser detta steg, och vad riskerar vi om steget saknas?
+
+## CI/CD Dag 1
+
+## Genomförda moment
+
+Jag har genomfört följande moment:
+
+- Klonat demonstrationsrepositoryt.
+- Skapat en virtuell Python-miljö.
+- Installerat projektets beroenden.
+- Kört automatiserade tester med pytest.
+- Undersökt API:et med Swagger.
+- Skapat en egen Git-branch.
+
+## Testresultat
+
+Vid Dag 1-baseline passerade 5 tester. LMS-testsviten har utökats vidare; kör `python -m pytest -v` för aktuellt testresultat.
+
+
 ## Dag 3: Testning, kvalitet och quality gates
 
 En build visar att projektet kan byggas, men inte att biblioteksreglerna fungerar. Därför används flera kontroller:
@@ -131,24 +153,3 @@ bash scripts/rollback_local.sh library-management:previous 1.1
 Det kräver att en tidigare image finns. Den första deploymenten har inget att återställa, och rollback av en image återställer inte applikationsdata. I nuvarande projekt lagras data i minnet och försvinner vid omstart.
 
 Manifesten i `k8s/` visar en valfri lokal Kubernetes Deployment och Service med readiness- och liveness-prober. Image måste finnas i det lokala klustret; kontrollera alltid `kubectl`-context och använd inte produktionsmiljö för övningen. Kubernetes-delen är orientering, inte ett krav för bibliotekssystemet.
-
-## Viktig fråga i varje steg
-
-> Vilket problem löser detta steg, och vad riskerar vi om steget saknas?
-
-## CI/CD Dag 1
-
-## Genomförda moment
-
-Jag har genomfört följande moment:
-
-- Klonat demonstrationsrepositoryt.
-- Skapat en virtuell Python-miljö.
-- Installerat projektets beroenden.
-- Kört automatiserade tester med pytest.
-- Undersökt API:et med Swagger.
-- Skapat en egen Git-branch.
-
-## Testresultat
-
-Vid Dag 1-baseline passerade 5 tester. LMS-testsviten har utökats vidare; kör `python -m pytest -v` för aktuellt testresultat.
