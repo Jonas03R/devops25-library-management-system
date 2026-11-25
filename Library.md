@@ -67,7 +67,70 @@ Swagger-dokumentationen finns på `/docs` när applikationen körs lokalt.
 | `scripts/deploy_local.sh` | Lokal Docker-build och deployment |
 | `scripts/rollback_local.sh` | Lokal återställning till en sparad image |
 | `k8s/` | Valfria Kubernetes-manifest för lokal orientering |
-| `docs/` | Kursguider, projektuppgift och Dag 2–6-material |
+| `docs/` | Dag 2-guide och kompletterande kursmaterial; Dag 3–6 sammanfattas i README |
+
+## Hur projektet byggdes
+
+Projektet utvecklades från kursens befintliga FastAPI-demo. De enkla räkne-endpointsen behölls som demoexempel, medan biblioteksfunktionerna lades till separat. Arbetet delades upp så att affärsregler, HTTP-gränssnitt, tester och leveransflöde går att förstå och kontrollera var för sig.
+
+### 1. Bibliotekets modeller och affärsregler
+
+I `app/library.py` representeras en bok, användare och ett lån med dataklasserna `Book`, `User` och `Loan`. En bok har bland annat ett ID, titel, författare, valfritt ISBN och tillgänglighetsstatus. Ett lån kopplar ihop ett bok-ID och användar-ID och har en status för om det återlämnats.
+
+`LibraryService` sköter reglerna och lagrar posterna i tre dictionaries i minnet. ID-räknarna börjar på 1 och ökas när nya poster skapas. En trådlåsning (`Lock`) används runt läsningar och ändringar av dessa strukturer.
+
+- Sökningen tar bort omgivande blanksteg och jämför titel och författare utan skillnad mellan stora och små bokstäver.
+- Utlåning kontrollerar i ordning att boken finns, användaren finns och boken är tillgänglig. Först därefter skapas ett lån och boken markeras som utlånad.
+- Återlämning kontrollerar att lånet finns och inte redan är återlämnat. Därefter markeras lånet som återlämnat och boken som tillgänglig.
+
+Denna lagringslösning är medvetet enkel. Inget skrivs till en databas eller fil, så innehållet försvinner när applikationsprocessen startas om.
+
+### 2. FastAPI-gränssnitt och validering
+
+`app/main.py` exponerar biblioteksfunktionerna som HTTP-endpoints. Pydantic-modellerna `BookCreate`, `UserCreate` och `BorrowRequest` beskriver indata. Titel, författare, namn och e-post måste ha minst ett tecken; bok- och användar-ID:n i ett låneanrop måste vara större än noll.
+
+Routes anropar `LibraryService` i stället för att innehålla hela affärslogiken själva. Nya böcker, användare och lån returnerar statuskod `201`. En gemensam exception handler översätter bibliotekets fel till JSON-svar:
+
+- saknad bok, användare eller lån ger `404`
+- bok som redan är utlånad eller lån som redan återlämnats ger `409`
+
+FastAPI skapar dessutom Swagger-gränssnittet på `/docs`, där API:t kan provas manuellt.
+
+### 3. Dataflöde genom applikationen
+
+Ett typiskt anrop går genom följande steg:
+
+```text
+HTTP-anrop
+  → FastAPI/Pydantic validerar indata
+  → endpoint i app/main.py
+  → LibraryService i app/library.py tillämpar biblioteksreglerna
+  → resultat eller LibraryError blir ett JSON-svar med HTTP-statuskod
+```
+
+Detta gör att samma utlånings- och återlämningsregler kan testas direkt i tjänsten och genom API:t. Hälsokontrollen `/health` visar att applikationen svarar. `/version` returnerar applikationsversionen `1.1` och miljön `demo`, så en körande container kan verifieras både för tillgänglighet och version.
+
+### 4. Tester och isolering
+
+`tests/test_service.py` testar reglerna direkt mot `LibraryService`, till exempel sökning, saknade poster, dubbel utlåning och återlämning. `tests/test_api.py` använder FastAPI `TestClient` för att anropa API-routes i testmiljön och kontrollera statuskoder och JSON-svar.
+
+API-testernas automatiska fixture ersätter bibliotekstjänsten med en ny instans före varje test. På så sätt påverkar inte böcker och lån från ett test resultatet i nästa. Tester täcker även health/version, katalogsökning och de bevarade räkne-endpointsen.
+
+### 5. CI, container och simulerad leverans
+
+CI i `.github/workflows/ci.yml` installerar Python 3.12 och projektets beroenden på en GitHub-hosted Ubuntu-runner. Pytest skriver en JUnit-rapport; rapporten laddas upp som `pytest-results`, även när tidigare steg misslyckats (om filen finns). Ruff körs därefter. Docker-jobbet har `needs: test` och startar därför inte förrän testjobbet lyckats.
+
+Dockerfile bygger på `python:3.12-slim`, installerar beroenden och startar Uvicorn på port 8000. CI bygger en SHA-taggad image, startar den, verifierar hälsa och bokkatalog samt kontrollerar att `/version` svarar med `1.1`. Vid verifieringsfel samlas containerloggar in; containern tas bort i ett avslutande steg.
+
+`cd-simulated.yml` demonstrerar en separat, tillfällig deployment på en GitHub-runner. Den bygger och verifierar en container men publicerar inte imagen till ett registry och lämnar inte applikationen körande efter jobbet. Eftersom CI och CD har separata triggers väntar CD inte automatiskt på en grön CI-körning.
+
+### 6. Lokal drift och rollback
+
+För lokal drift bygger `scripts/deploy_local.sh` imagen `library-management:local` och startar containern `library-management-demo`. Om en container med detta övningsnamn redan finns, sparar skriptet dess image under taggen `library-management:previous` innan containern ersätts.
+
+`scripts/verify.sh` väntar på att health-endpointen ska svara och kontrollerar sedan att bokkatalogen returnerar en JSON-lista. `scripts/rollback_local.sh` kontrollerar att rollback-imagen finns, startar den och verifierar hälsa/katalog samt en valfri förväntad appversion.
+
+Rollback fungerar bara om det finns en tidigare fungerande image att återgå till. En image-rollback återställer inte beständig data; nuvarande applikation lagrar data i minnet. Kubernetes-manifesten är en separat, valfri orienteringsövning och är inte en produktionsdeployment.
 
 ## **Projektets arbetsplan**
 
@@ -197,7 +260,7 @@ Kubernetes-manifest finns i `k8s/` som en valfri lokal övning. De har inte veri
 
 ### 9. Felhantering och rollback – visa hur problem upptäcks och hanteras
 
-**Genomfört:** Workflowen kan visa containerloggar om verifieringen misslyckas och städar containern även vid fel. Dag 6-guiden beskriver felsökning från första röda steget: kontrollera commit och trigger, läs loggen, formulera en hypotes, återskapa felet och verifiera rättningen.
+**Genomfört:** Workflowen kan visa containerloggar om verifieringen misslyckas och städar containern även vid fel. Dag 6-avsnittet i README beskriver felsökning från första röda steget: kontrollera commit och trigger, läs loggen, formulera en hypotes, återskapa felet och verifiera rättningen.
 
 `scripts/deploy_local.sh` sparar den befintliga containerns image som `library-management:previous` innan den ersätter containern. `scripts/rollback_local.sh` kan starta den sparade imagen och verifiera hälsa, katalog samt valfri förväntad appversion:
 
