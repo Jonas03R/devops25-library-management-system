@@ -211,7 +211,7 @@ bash scripts/rollback_local.sh library-management:previous 1.1
 
 Denna fil sammanfattar projektets mål, genomförda funktioner och CI/CD-kedja. Övriga guider finns i `docs/`:
 
-- [Projektuppgift och steg-för-steg-guide](docs/project-assignment.md)
+- Slutprojektets steg-för-steg-guide finns under Dag 6 i [README.md](README.md)
 - [Dag 2 – CI](docs/day-02-ci.md)
 - Dag 3–6 sammanfattas i [README.md](README.md)
 

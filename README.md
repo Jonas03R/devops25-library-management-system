@@ -38,7 +38,7 @@ python -m uvicorn app.main:app --reload
 
 ## Börja projektarbetet
 
-Demonstrationsrepositoryt är `https://github.com/cloudfactoreu/devops25-ci-cd-demo`. Följ [projektuppgiftens steg-för-steg-guide](docs/project-assignment.md) innan du börjar bygga vidare. Om du redan arbetar i den här klonade katalogen ska du inte klona en kopia inuti den.
+Demonstrationsrepositoryt är `https://github.com/cloudfactoreu/devops25-ci-cd-demo`. Följ [slutprojektets steg-för-steg-guide under Dag 6](#slutprojekt-library-management-system) innan du börjar bygga vidare. Om du redan arbetar i den här klonade katalogen ska du inte klona en kopia inuti den.
 
 Den första implementationen lagrar data i minnet. Böcker och lån återställs därför när applikationen startas om; det gör att vi kan fokusera på Git, tester och CI innan vi senare väljer beständig lagring.
 
@@ -90,7 +90,6 @@ Jag har genomfört följande moment:
 ## Testresultat
 
 Vid Dag 1-baseline passerade 5 tester. LMS-testsviten har utökats vidare; kör `python -m pytest -v` för aktuellt testresultat.
-
 
 ## Dag 3: Testning, kvalitet och quality gates
 
@@ -153,3 +152,180 @@ bash scripts/rollback_local.sh library-management:previous 1.1
 Det kräver att en tidigare image finns. Den första deploymenten har inget att återställa, och rollback av en image återställer inte applikationsdata. I nuvarande projekt lagras data i minnet och försvinner vid omstart.
 
 Manifesten i `k8s/` visar en valfri lokal Kubernetes Deployment och Service med readiness- och liveness-prober. Image måste finnas i det lokala klustret; kontrollera alltid `kubectl`-context och använd inte produktionsmiljö för övningen. Kubernetes-delen är orientering, inte ett krav för bibliotekssystemet.
+
+### Slutprojekt: Library Management System
+
+#### Mål
+
+Bygg vidare på kursens demonstrationsrepository till ett enkelt digitalt bibliotek. Visa samtidigt hur GitHub Actions automatiskt kontrollerar ändringar före en testdeployment. Börja med minsta fungerande version. Lägg inte till databas, inloggning eller molndrift innan grundflödet och testerna fungerar.
+
+#### Steg 0: Hämta och kontrollera rätt repository
+
+Kursmaterialet använder två olika repositoryn:
+
+- `cloudfactoreu/devops25-ci-cd-course` är kursmallen och innehåller generell vägledning.
+- `cloudfactoreu/devops25-ci-cd-demo` är demonstrationsrepositoryt för Dag 2 och kodbasen som bibliotekssystemet bygger vidare på.
+
+Om du börjar från kursens demo ska du arbeta i din egen fork. Om du redan arbetar i ditt eget Library Management System-repository ska du inte klona en ny kopia eller byta remote utan anledning.
+
+Kontrollera arbetsmapp, branch och remote i PowerShell:
+
+```powershell
+git status
+git branch --show-current
+git remote -v
+```
+
+Om du behöver klona en egen fork av demonstrationsrepositoryt, byt ut `DIN-ANVÄNDARE` mot ditt GitHub-kontonamn:
+
+```powershell
+Set-Location C:\GitHub
+git clone https://github.com/DIN-ANVÄNDARE/devops25-ci-cd-demo.git
+Set-Location C:\GitHub\devops25-ci-cd-demo
+git remote -v
+```
+
+Kontrollera att `origin` pekar på din egen fork innan du pushar. Om du redan har en projektmapp ska du inte klona en kopia inuti den. Flytta eller radera inte en befintlig projektmapp på chans; spara ändringar och kontrollera Git-status först. Kursguiden rekommenderar att undvika synkroniserade mappar om möjligt.
+
+Om `origin` pekar på kursens original och du redan har skapat en egen fork kan du ändra adressen så här:
+
+```powershell
+git remote set-url origin https://github.com/DIN-ANVÄNDARE/devops25-ci-cd-demo.git
+git remote -v
+```
+
+#### Steg 1: Kör och förstå nuläget
+
+Skapa en virtuell Python-miljö, installera beroenden och starta appen:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+pip install -r requirements.txt
+python -m pytest
+python -m uvicorn app.main:app --reload
+```
+
+Öppna `http://127.0.0.1:8000/docs` och prova `/health`, `/api/add` och `/api/divide`. Läs `.github/workflows/ci.yml` och följ kedjan **commit → trigger → build → resultat → feedback**. Den nuvarande CI:n körs vid push till `main` och `feature/**`, samt vid pull request mot `main`. Den installerar beroenden, kör Pytest och Ruff och bygger/verifierar Docker-imagen efter godkända kontroller.
+
+Om du saknar arbetsbranch skapar du en:
+
+```powershell
+git switch -c feature/library-management
+```
+
+Notera vad den befintliga pipelinen faktiskt kontrollerar. I Dag 2-övningen ska du läsa `ci.yml` och förstå den innan du ändrar den.
+
+#### Steg 2: Avgränsa första versionen
+
+Implementera och testa dessa flöden först:
+
+1. Registrera en bok med titel, författare och valfritt ISBN.
+2. Visa katalogen och sök efter titel eller författare, utan skillnad mellan stora och små bokstäver.
+3. Registrera och visa användare.
+4. Låna en tillgänglig bok till en registrerad användare.
+5. Registrera återlämning och kontrollera att boken blir tillgänglig igen.
+
+API:t ska ge `404` för en bok, användare eller ett lån som saknas och `409` när en redan utlånad bok lånas eller ett lån återlämnas en andra gång. Första versionen använder minnet som lagring. Om processen startas om försvinner data; detta är en avsiktlig förenkling, inte beständig biblioteksdrift.
+
+#### Steg 3: Testa reglerna innan nästa steg i kedjan
+
+Kör tester och lint lokalt:
+
+```powershell
+python -m pytest
+python -m ruff check app tests
+```
+
+Kontrollera minst att:
+
+- en tillgänglig bok går att låna av en registrerad användare
+- en bok som redan är utlånad inte kan lånas igen
+- en bok som inte finns inte kan lånas
+- en bok blir tillgänglig efter återlämning
+- sökning matchar titel/författare och inte returnerar orelaterade böcker
+- felaktiga ID:n ger tydliga HTTP-felkoder
+
+Som övning kan du i en tillfällig branch ändra en testförväntning så att testet blir rött. Läs felmeddelandet, återställ just den ändringen och kör hela testsamlingen igen. Återställ inte hela testfilen eller byt branch på chans; det kan kasta bort arbete. Skapa inte en commit med det avsiktligt felaktiga testet.
+
+För en konkret övning, ändra tillfälligt förväntningen för den andra utlåningen i `test_cannot_borrow_a_missing_or_already_borrowed_book` från `409` till `200` och kör testet:
+
+```powershell
+python -m pytest tests/test_api.py::test_cannot_borrow_a_missing_or_already_borrowed_book -q
+```
+
+Testet ska bli rött eftersom API:t korrekt svarar `409`. Återställ den ändrade förväntningen till `409` och kör sedan hela testsamlingen och Ruff igen.
+
+I CI kör **Test and Lint** Pytest och Ruff. **Build Docker Image** väntar på att det jobbet lyckas, vilket stoppar image-build om testjobbet fallerar. Denna gate kräver inte automatiskt godkända kontroller före merge; det kräver branch protection eller en ruleset. En code review är en mänsklig kontroll och ersätter inte testerna. Gröna tester bevisar endast att de testade beteendena passerar, inte att alla fel eller säkerhetsrisker är täckta.
+
+#### Steg 4: Använd GitHub som arbetsflöde
+
+Gör små commits med ett tydligt syfte. Exempel:
+
+```powershell
+git add app tests docs README.md Dockerfile .github/workflows scripts
+git commit -m "Describe the change"
+git status
+git push -u origin feature/library-management
+```
+
+Öppna en pull request (PR) från arbetsbranchen till din egen forks `main`. Kontrollera att CI körs, läs loggar vid fel och pusha rättningar till samma branch. Slå inte ihop en ändring med misslyckade obligatoriska kontroller.
+
+I GitHub Actions är ett **workflow** YAML-beskrivningen, ett **job** en grupp steg och en **runner** maskinen som kör jobbet. `uses` kör en färdig Action, `run` kör ett kommando och `needs` gör att ett jobb väntar på ett annat. I projektets CI kör Ruff lint, Pytest tester och Docker-jobbet väntar på testjobbet. Runnern är GitHub-hosted Ubuntu; bygg inte en self-hosted runner för denna övning.
+
+Säkerhetskontroller kompletterar testning. Dependabot kan bevaka beroenden, CodeQL kan analysera kodmönster och secret scanning kan upptäcka vissa incheckade hemligheter. De är inte aktiverade i nuvarande workflow. Lägg aldrig riktiga tokens eller lösenord i källkod.
+
+#### Steg 5: Bygg och verifiera leveransen
+
+Bygg och starta containern lokalt:
+
+```powershell
+docker build -t library-management:local .
+docker run --rm -p 8000:8000 library-management:local
+```
+
+Verifiera `/health` och prova API:t i `/docs`. Dag 3–6-avsnitten ovan förklarar testnivåerna, Docker, artifacts, simulerad deployment, versionskontroll och rollback. CI sparar en JUnit-rapport men publicerar inte imagen till ett registry. CD-workflowen startar en tillfällig container och verifierar hälsa, katalog och applikationsversion; det är inte produktionsdrift.
+
+#### Steg 6: Redovisa och resonera
+
+Visa:
+
+1. API:t och en lyckad utlåning/återlämning
+2. ett automatiserat test som fångar en regelöverträdelse
+3. en GitHub Actions-körning från commit eller pull request
+4. image-build, testrapport-artifact och verifiering av simulerad deployment
+5. ett fel i pipelinen, loggen och hur felet åtgärdades
+6. rollback-strategin och begränsningarna för beständig data
+7. möjliga förbättringar, exempelvis databas, autentisering, övervakning och säker deployment
+
+För varje steg ska du kunna förklara: **Vilket problem löser det? Vilken risk minskar det? Vad händer om steget saknas eller misslyckas?**
+
+Kubernetes-manifesten är en orienteringsövning, inte ett krav för ett så litet projekt. Använd endast ett lokalt testkluster och kontrollera aktiv `kubectl`-context innan du kör kommandon.
+
+#### Kort ordlista
+
+- **Repository:** Git-projekt med kod och historik.
+- **Fork:** en egen kopia av någon annans GitHub-repository.
+- **Clone:** hämtar repositoryt och dess Git-historik till datorn.
+- **Branch:** en separat utvecklingslinje för en ändring.
+- **Commit:** ett namngivet, spårbart tillstånd i Git-historiken.
+- **Push:** skickar lokala commits till ett fjärrrepository.
+- **Pull request (PR):** ett förslag att föra branchens ändringar till exempelvis `main`; GitHub kan köra CI-kontroller på förslaget.
+- **CI:** automatisk feedback på ändringar genom exempelvis lint, test och build.
+- **Runner:** maskinen som utför ett GitHub Actions-jobb; den är inte samma sak som en Docker-image.
+
+#### Bedömning
+
+Projektet bedöms inte bara på att det fungerar tekniskt. Du ska kunna förklara varför CI/CD-kedjan är byggd som den är.
+
+Minimikraven är:
+
+- repository och versionshanterade ändringar
+- build
+- automatiserade tester
+- artifact eller container image
+- deployment till testmiljö eller simulerad miljö
+- verifiering
+- felhantering eller rollback-resonemang
+
+Vid muntlig presentation visar du kedjans arkitektur, en fungerande körning, ett fel eller en risk, hur kedjan reagerar och vad du skulle förbättra i en produktionsmiljö.
