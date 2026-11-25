@@ -63,15 +63,74 @@ docker run --rm -p 8000:8000 library-management:local
 
 ## Pedagogisk användning
 
-Repositoryt är byggt för att kunna användas stegvis:
+Repositoryt följer kursens steg från första commit till verifierad leverans:
 
-1. **Dag 1:** förstå applikationen och varför versionshantering behövs
-2. **Dag 2:** skapa första CI-pipelinen
-3. **Dag 3:** [testning, kodkvalitet och quality gates](docs/day-03-testing.md)
-4. **Dag 4:** [bygga och verifiera Docker-image](docs/day-04-docker.md)
-5. **Dag 5:** [simulerad deployment, verifiering och artifacts](docs/day-05-delivery.md)
-6. **Dag 6:** [felsöka, verifiera och öva rollback/Kubernetes](docs/day-06-operations.md)
-7. **Projekt:** bygga och motivera en egen CI/CD-kedja för bibliotekssystemet
+- **Dag 1:** förstå applikationen och varför versionshantering behövs
+- **Dag 2:** skapa första CI-pipelinen – se [Dag 2-guiden](docs/day-02-ci.md)
+- **Dag 3–6:** testning, Docker, simulerad leverans och drift – sammanfattas i avsnitten nedan
+- **Projekt:** bygga och motivera en egen CI/CD-kedja för bibliotekssystemet
+
+## Dag 3: Testning, kvalitet och quality gates
+
+En build visar att projektet kan byggas, men inte att biblioteksreglerna fungerar. Därför används flera kontroller:
+
+- **Unit tests** i `tests/test_service.py` kontrollerar sökning, utlåning och återlämning direkt i tjänsten.
+- **API-tester** i `tests/test_api.py` kontrollerar HTTP-svar, statuskoder och samspelet mellan API och tjänst.
+- **Ruff** kontrollerar kodkvalitet och fångar andra problem än testerna.
+- Manuell verifiering och smoke tests kontrollerar att applikationen kan starta och svara.
+
+Viktiga testfall är att en redan utlånad eller saknad bok inte kan lånas, att en återlämnad bok blir tillgänglig och att sökning ger rätt resultat. Kör kontrollerna lokalt:
+
+```powershell
+python -m pytest -v
+python -m ruff check app tests
+```
+
+I CI körs **Test and Lint** före **Build Docker Image**. `needs: test` gör att Docker-jobbet väntar tills testjobbet lyckats. Detta stoppar image-build vid misslyckade kontroller, men kräver inte automatiskt godkända kontroller före merge. Det behöver ställas in separat med branch protection eller ruleset. Dependabot, CodeQL och secret scanning är kompletterande säkerhetsfunktioner och aktiveras inte av den nuvarande CI-workflowen.
+
+## Dag 4: Docker och image-build
+
+En **Dockerfile** beskriver byggreceptet, en **image** är det paketerade resultatet och en **container** är en körande instans av imagen. Projektets Dockerfile installerar Python-beroenden och startar API:t på port 8000.
+
+Bygg och starta lokalt:
+
+```powershell
+docker build -t library-management:local .
+docker run --rm --name library-management-demo -p 8000:8000 library-management:local
+```
+
+Öppna `http://127.0.0.1:8000/health` eller `/docs` medan containern kör. Stoppa den med `Ctrl+C`. Om port 8000 används kan värdporten ändras, till exempel `-p 8001:8000`.
+
+CI bygger imagen med en tagg som innehåller commitens SHA och startar den för att kontrollera hälsa, bokkatalog och applikationsversion. Builden sker på en tillfällig runner och imagen publiceras inte till Docker Hub eller GHCR. En lyckad build är alltså inte samma sak som publicering eller deployment.
+
+## Dag 5: Simulerad Continuous Delivery och verifiering
+
+CI sparar Pytests JUnit-rapport `reports/pytest.xml` som artifacten `pytest-results`. Rapporten kan laddas ner från GitHub Actions-körningens **Summary**. Den visar testresultat; den är inte en körande applikation.
+
+CD-workflowen bygger och startar en container på en tillfällig GitHub-runner. Den verifierar `/health`, bokkatalogen och `/version`, visar loggar vid verifieringsfel och städar sedan containern. Flödet kan också köras lokalt med Docker:
+
+```bash
+bash scripts/deploy_local.sh
+bash scripts/verify.sh
+```
+
+CI och CD har separata triggers; CD väntar inte automatiskt på att CI ska vara grön. CD-flödet är därför en undervisningssimulering, inte en produktions-release-gate. Ingen image publiceras och deploymenten är inte permanent.
+
+## Dag 6: Felsökning, versionskontroll och rollback
+
+Vid ett rött workflow kontrolleras först branch, commit och trigger. Läs det första misslyckade steget, formulera en hypotes, återskapa felet om möjligt, ändra en sak i taget och verifiera rättningen.
+
+API:ets `GET /version` returnerar `1.1` och miljön `demo`. CI och CD kontrollerar denna endpoint i den startade containern. `/health` visar att tjänsten svarar, medan `/version` hjälper till att kontrollera vilken appversion som körs.
+
+`scripts/deploy_local.sh` sparar den tidigare containerns image som `library-management:previous` när en befintlig lokal container ersätts. En rollback kan göras med:
+
+```bash
+bash scripts/rollback_local.sh library-management:previous 1.1
+```
+
+Det kräver att en tidigare image finns. Den första deploymenten har inget att återställa, och rollback av en image återställer inte applikationsdata. I nuvarande projekt lagras data i minnet och försvinner vid omstart.
+
+Manifesten i `k8s/` visar en valfri lokal Kubernetes Deployment och Service med readiness- och liveness-prober. Image måste finnas i det lokala klustret; kontrollera alltid `kubectl`-context och använd inte produktionsmiljö för övningen. Kubernetes-delen är orientering, inte ett krav för bibliotekssystemet.
 
 ## Viktig fråga i varje steg
 

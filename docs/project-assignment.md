@@ -100,7 +100,7 @@ Kontrollera minst:
 
 Skapa gärna ett avsiktligt fel i en egen, tillfällig branch och se att ett test blir rött. Återställ felet genom att ändra koden, inte genom att radera eller skriva över arbete som du vill behålla. Förklara vad loggen visar och varför pipelinen ska stoppa vid fel.
 
-Se [Dag 3-guiden](./day-03-testing.md) för den säkra, konkreta övningen och förklaringen av testnivåer. I det här repositoryt kör **Test and Lint** Ruff och Pytest; **Build Docker Image** väntar på att det jobbet lyckas. Den gate:en stoppar image-build, men ruleset/branch protection behövs separat för att kräva gröna kontroller före merge.
+Se sammanfattningarna för Dag 3–6 i [README.md](../README.md) för testning, quality gates, Docker, simulerad deployment, verifiering och rollback. I det här repositoryt kör **Test and Lint** Ruff och Pytest; **Build Docker Image** väntar på att det jobbet lyckas. Den gate:en stoppar image-build, men ruleset/branch protection behövs separat för att kräva gröna kontroller före merge.
 
 ## Steg 4: Använd GitHub som arbetsflöde
 
@@ -127,7 +127,7 @@ docker build -t library-management:local .
 docker run --rm -p 8000:8000 library-management:local
 ```
 
-Följ [Dag 4-guiden](./day-04-docker.md) för att verifiera `/health`, prova API:t i `/docs` och förstå skillnaden mellan Dockerfile, image och container. Följ [Dag 5-guiden](./day-05-delivery.md) för simulerad deployment och test-artifact och [Dag 6-guiden](./day-06-operations.md) för felsökning, versionskontroll, rollback och lokal Kubernetes-orientering. CI sparar en JUnit-rapport men publicerar inte imagen till ett registry. CD-workflowen startar en tillfällig container och verifierar hälsa, katalog och applikationsversion; den är inte produktionsdrift.
+Se Dag 3–6 i [README.md](../README.md) för Docker, simulerad deployment, test-artifact, felsökning, versionskontroll, rollback och lokal Kubernetes-orientering. CI sparar en JUnit-rapport men publicerar inte imagen till ett registry. CD-workflowen startar en tillfällig container och verifierar hälsa, katalog och applikationsversion; den är inte produktionsdrift.
 
 ## Steg 6: Redovisa och resonera
 

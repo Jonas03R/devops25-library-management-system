@@ -213,10 +213,7 @@ Denna fil sammanfattar projektets mål, genomförda funktioner och CI/CD-kedja. 
 
 - [Projektuppgift och steg-för-steg-guide](docs/project-assignment.md)
 - [Dag 2 – CI](docs/day-02-ci.md)
-- [Dag 3 – testning och kvalitet](docs/day-03-testing.md)
-- [Dag 4 – Docker](docs/day-04-docker.md)
-- [Dag 5 – delivery och verifiering](docs/day-05-delivery.md)
-- [Dag 6 – drift, felsökning och rollback](docs/day-06-operations.md)
+- Dag 3–6 sammanfattas i [README.md](README.md)
 
 För en demonstration kan du visa:
 
