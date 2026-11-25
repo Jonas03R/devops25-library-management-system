@@ -21,6 +21,7 @@ Commit → Build → Test → Artifact/Image → Deploy → Verify → Rollback
 - Scripts för lokal körning, verifiering, deployment och rollback
 - Studentuppgifter för vecka 1–4
 - Projektuppgift och bedömningsstöd
+- [Samlad projektdokumentation för Library Management System](Library.md)
 
 ## Snabbstart lokalt
 
